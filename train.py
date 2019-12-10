@@ -242,6 +242,8 @@ def train(fold, config, args, device, logger):
         model.train()
         torch.cuda.empty_cache()
 
+    return val_pred, val_true
+
 
 if __name__ == '__main__':
     args = get_args()
@@ -261,6 +263,14 @@ if __name__ == '__main__':
         else torch.device("cpu")
     )
 
+    oof_pred = []
+    oof_true = []
     for fold in range(config['dataset']['n_folds']):
         logger.info('\nTraining for fold {} begin...'.format(fold))
-        train(fold, config, args, device, logger)
+        fold_val_pred, fold_val_true = train(fold, config, args, device, logger)
+        oof_pred.append(fold_val_pred)
+        oof_true.append(fold_val_true)
+    oof_pred = np.concatenate(oof_pred, axis=0)
+    oof_true = np.concatenate(oof_true, axis=0)
+    oof_rho = spearmans_rho(oof_true, oof_pred)
+    logger.info('OOF rho: {}'.format(oof_rho))
