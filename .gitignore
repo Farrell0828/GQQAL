@@ -1,0 +1,8 @@
+__pycache__/
+.vscode/
+input/
+data/
+temp/
+checkpoints/
+eda*.ipynb
+playground.py
