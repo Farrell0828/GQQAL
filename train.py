@@ -11,8 +11,10 @@ from torch import nn, optim
 from torch.utils.data import DataLoader 
 from torch.nn.utils import clip_grad_norm_ 
 
-from transformers import AdamW, WarmupCosineWithHardRestartsSchedule
-from transformers import WarmupCosineSchedule, WarmupLinearSchedule
+from transformers import AdamW 
+from transformers import get_linear_schedule_with_warmup 
+from transformers import get_cosine_schedule_with_warmup  
+from transformers import get_cosine_with_hard_restarts_schedule_with_warmup 
 from tensorboardX import SummaryWriter 
 
 from gquest.dataset import QuestDataset 
@@ -68,7 +70,7 @@ def get_args():
 
 def prepare_logger(dirpath):
     # Create a custom logger
-    logger = logging.getLogger()
+    logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
 
     # Create handlers
@@ -148,21 +150,21 @@ def train(fold, config, args, device, logger):
     if config['solver']['lr_schedule'] == 'warmup_linear':
         warmup_steps = iterations * config["solver"]["warmup_epochs"]
         t_total = iterations * config["solver"]["n_epochs"]
-        scheduler = WarmupLinearSchedule(
-            optimizer, warmup_steps=warmup_steps, t_total=t_total
+        scheduler = get_linear_schedule_with_warmup(
+            optimizer, warmup_steps, t_total
         )
     elif config['solver']['lr_schedule'] == 'warmup_cosine':
         warmup_steps = iterations * config["solver"]["warmup_epochs"]
         t_total = iterations * config["solver"]["n_epochs"]
-        scheduler = WarmupCosineSchedule(
-            optimizer, warmup_steps=warmup_steps, t_total=t_total
+        scheduler = get_cosine_schedule_with_warmup(
+            optimizer, warmup_steps, t_total
         )
     elif config['solver']['lr_schedule'] == 'warmup_cosine_with_hard_restarts':
         warmup_steps = iterations * config["solver"]["warmup_epochs"]
         t_total = iterations * config["solver"]["n_epochs"]
         cycles = config['solver']['cycles']
-        scheduler = WarmupCosineWithHardRestartsSchedule(
-            optimizer, warmup_steps=warmup_steps, t_total=t_total, cycles=cycles
+        scheduler = get_cosine_with_hard_restarts_schedule_with_warmup(
+            optimizer, warmup_steps, t_total, num_cycles=cycles
         )
     else:
         raise NotImplementedError()

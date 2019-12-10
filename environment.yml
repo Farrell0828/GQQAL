@@ -145,7 +145,7 @@ dependencies:
     - sacremoses==0.0.35
     - sentencepiece==0.1.83
     - tensorboardx==1.9
-    - transformers==2.0.0
+    - transformers==2.2.0
     - urllib3==1.25.7
 prefix: /home/fanqimen/miniconda3/envs/gqqal
 
