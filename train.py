@@ -114,6 +114,8 @@ def train(fold, config, args, device, logger):
 
     if config['model']['loss'] == 'mse':
         criterion = nn.MSELoss()
+    elif config['model']['loss'] == 'bce':
+        criterion = nn.BCELoss()
     else:
        raise NotImplementedError
     
@@ -180,7 +182,8 @@ def train(fold, config, args, device, logger):
 
     # Training loop
     for epoch in range(config['solver']['n_epochs']):
-        logger.info('\nTraining for epoch {} begin...'.format(epoch))
+        logger.info('\n')
+        logger.info('Training for epoch {} begin...'.format(epoch))
         for batch in tqdm(train_dataloader):
             for key in batch:
                 batch[key] = batch[key].to(device)
@@ -266,11 +269,13 @@ if __name__ == '__main__':
     oof_pred = []
     oof_true = []
     for fold in range(config['dataset']['n_folds']):
-        logger.info('\nTraining for fold {} begin...'.format(fold))
+        logger.info('\n')
+        logger.info('Training for fold {} begin...'.format(fold))
         fold_val_pred, fold_val_true = train(fold, config, args, device, logger)
         oof_pred.append(fold_val_pred)
         oof_true.append(fold_val_true)
     oof_pred = np.concatenate(oof_pred, axis=0)
     oof_true = np.concatenate(oof_true, axis=0)
     oof_rho = spearmans_rho(oof_true, oof_pred)
+    logger.info('\n')
     logger.info('OOF rho: {}'.format(oof_rho))
