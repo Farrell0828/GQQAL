@@ -245,6 +245,8 @@ def train(fold, config, args, device, logger):
         model.train()
         torch.cuda.empty_cache()
 
+    summary_writer.close()
+    
     return val_pred, val_true
 
 
