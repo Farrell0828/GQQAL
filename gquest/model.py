@@ -7,22 +7,30 @@ class QuestModel(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
+
         if 'distilbert' in config['transformer_type']:
             self.transformer = DistilBertModel.from_pretrained(config['transformer_type'])
         elif 'bert' in config['transformer_type']:
             self.transformer = BertModel.from_pretrained(config['transformer_type'])
         else:
             raise NotImplementedError()
-        self.fc = nn.Linear(
-            3*config['transformer_hidden_size'], config['output_size']
-        )
+
         if config['pool_method'] == 'average':
             self.pooler = lambda x: torch.mean(x, dim=1)
         elif config['pool_method'] == 'max':
             self.pooler = lambda x: torch.max(x, dim=1)[0]
         else:
             raise NotImplementedError()
-        self.sigmoid = nn.Sigmoid()
+
+        self.fc_hidden = nn.Sequential(
+            nn.Linear(3*config['transformer_hidden_size'], config['linear_hidden_size']),
+            {'relu': nn.ReLU(), 'elu': nn.ELU(), 'tanh': nn.Tanh()}[config['activation']]
+        )
+
+        self.fc_out = nn.Sequential(
+            nn.Linear(config['linear_hidden_size'], config['output_size']),
+            nn.Sigmoid()
+        )
 
     def forward(self, batch):
         # (batch_size, max_question_title_length, transformer_hidden_size)
@@ -43,8 +51,8 @@ class QuestModel(nn.Module):
             question_body_feature, 
             answer_feature
         ], -1)
+        # (batch_size, linear_hidden_size)
+        output = self.fc_hidden(context_features)
         # (batch_size, output_size)
-        output = self.fc(context_features)
-        # (batch_size, output_size)
-        output = self.sigmoid(output)
+        output = self.fc_out(output)
         return output
