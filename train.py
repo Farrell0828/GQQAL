@@ -178,9 +178,11 @@ def train(fold, config, args, device, logger):
         model, optimizer, save_dirpath, config=config
     )
     global_iteration_step = 0
-    model.train()
+    epochs_val_pred = []
+    epochs_val_true = []
 
     # Training loop
+    model.train()
     for epoch in range(config['solver']['n_epochs']):
         logger.info('\n')
         logger.info('Training for epoch {} begin...'.format(epoch))
@@ -228,6 +230,8 @@ def train(fold, config, args, device, logger):
         val_pred = val_pred.clone().detach().cpu().numpy()
         val_true = val_true.clone().detach().cpu().numpy()
         val_rho = spearmans_rho(val_true, val_pred)
+        epochs_val_pred.append(val_pred)
+        epochs_val_true.append(val_true)
 
         logger.info(
             'Epoch {} evaluate result: val_loss = {}, val_rho = {}'.format(
@@ -246,8 +250,10 @@ def train(fold, config, args, device, logger):
         torch.cuda.empty_cache()
 
     summary_writer.close()
+    epochs_val_pred = np.array(epochs_val_pred)
+    epochs_val_true = np.array(epochs_val_true)
     
-    return val_pred, val_true
+    return epochs_val_pred, epochs_val_true
 
 
 if __name__ == '__main__':
@@ -276,8 +282,10 @@ if __name__ == '__main__':
         fold_val_pred, fold_val_true = train(fold, config, args, device, logger)
         oof_pred.append(fold_val_pred)
         oof_true.append(fold_val_true)
-    oof_pred = np.concatenate(oof_pred, axis=0)
-    oof_true = np.concatenate(oof_true, axis=0)
-    oof_rho = spearmans_rho(oof_true, oof_pred)
+    oof_pred = np.concatenate(oof_pred, axis=1)
+    oof_true = np.concatenate(oof_true, axis=1)
     logger.info('\n')
-    logger.info('OOF rho: {}'.format(oof_rho))
+    logger.info('OOF rho:')
+    for i in range(config['solver']['n_epochs']):
+        oof_rho = spearmans_rho(oof_true[i], oof_pred[i])
+        logger.info('\tEpoch {}: {}'.format(i, oof_rho))
