@@ -20,7 +20,7 @@ model:
   transformer_type: "distilbert-base-uncased" # same as tokenizer_type
   transformer_hidden_size: 768    # 768 for distilbert and bert base
                                   # 1024 for bert large
-  pool_method: "average"
+  pool_method: "max"
   output_size: 30
   loss: "bce"     # "mse" for mean square error loss
                   # "bce" for binary cross entropy loss
@@ -30,7 +30,7 @@ model:
 solver:
   batch_size: 8
   n_epochs: 4
-  initial_lr: 0.00005
+  initial_lr: 0.00004
   optimizer: "AdamW"
   max_grad_norm: 1.0        # set to 0 if not clip gradient
   weight_decay: 0.01        # set to 0 if not use l2 regularization

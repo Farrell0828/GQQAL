@@ -17,9 +17,9 @@ class QuestModel(nn.Module):
             3*config['transformer_hidden_size'], config['output_size']
         )
         if config['pool_method'] == 'average':
-            self.pooler = torch.mean
+            self.pooler = lambda x: torch.mean(x, dim=1)
         elif config['pool_method'] == 'max':
-            self.pooler = torch.max
+            self.pooler = lambda x: torch.max(x, dim=1)[0]
         else:
             raise NotImplementedError()
         self.sigmoid = nn.Sigmoid()
@@ -28,15 +28,15 @@ class QuestModel(nn.Module):
         # (batch_size, max_question_title_length, transformer_hidden_size)
         question_title_feature = self.transformer(batch['question_title'])[0]
         # (batch_size, transformer_hidden_size)
-        question_title_feature = self.pooler(question_title_feature, 1)
+        question_title_feature = self.pooler(question_title_feature)
         # (batch_size, max_question_body_length, transformer_hidden_size)
         question_body_feature = self.transformer(batch['question_body'])[0]
         # (batch_size, transformer_hidden_size)
-        question_body_feature = self.pooler(question_body_feature, 1)
+        question_body_feature = self.pooler(question_body_feature)
         # (batch_size, max_answer_length, transformer_hidden_size)
         answer_feature = self.transformer(batch['answer'])[0]
         # (batch_size, transformer_hidden_size)
-        answer_feature = self.pooler(answer_feature, 1)
+        answer_feature = self.pooler(answer_feature)
         # (batch_size, 3*transformer_hidden_size)
         context_features = torch.cat([
             question_title_feature, 
