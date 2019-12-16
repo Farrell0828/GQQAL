@@ -16,7 +16,7 @@ class FCDecoder(nn.Module):
                 nn.Linear(config['hidden_size'], config['hidden_size']),
                 nn.ELU()
             )
-            for n in range(config['n_hidden_layers'])
+            for n in range(config['n_hidden_layers'] - 1)
         ])
         self.output_layer = nn.Sequential(
             nn.Linear(config['hidden_size'], config['output_size']),
