@@ -1,58 +1,33 @@
 import torch 
 from torch import nn 
-from transformers import DistilBertModel, BertModel 
+from gquest.encoder import SentenceEncoder 
+from gquest.fusioner import Concater 
+from gquest.decoder import FCDecoder 
+
 
 class QuestModel(nn.Module):
 
     def __init__(self, config):
         super().__init__()
-        self.config = config
+        self.sentence_encoder = SentenceEncoder(config['sentence_encoder'])
 
-        if 'distilbert' in config['transformer_type']:
-            self.transformer = DistilBertModel.from_pretrained(config['transformer_type'])
-        elif 'bert' in config['transformer_type']:
-            self.transformer = BertModel.from_pretrained(config['transformer_type'])
+        if config['fusioner'] == 'concat':
+            self.fusioner = Concater()
         else:
             raise NotImplementedError()
 
-        if config['pool_method'] == 'average':
-            self.pooler = lambda x: torch.mean(x, dim=1)
-        elif config['pool_method'] == 'max':
-            self.pooler = lambda x: torch.max(x, dim=1)[0]
+        if config['decoder'] == 'fc':
+            self.decoder = FCDecoder(config['fc_decoder'])
         else:
             raise NotImplementedError()
-
-        self.fc_hidden = nn.Sequential(
-            nn.Linear(3*config['transformer_hidden_size'], config['linear_hidden_size']),
-            {'relu': nn.ReLU(), 'elu': nn.ELU(), 'tanh': nn.Tanh()}[config['activation']]
-        )
-
-        self.fc_out = nn.Sequential(
-            nn.Linear(config['linear_hidden_size'], config['output_size']),
-            nn.Sigmoid()
-        )
 
     def forward(self, batch):
-        # (batch_size, max_question_title_length, transformer_hidden_size)
-        question_title_feature = self.transformer(batch['question_title'])[0]
-        # (batch_size, transformer_hidden_size)
-        question_title_feature = self.pooler(question_title_feature)
-        # (batch_size, max_question_body_length, transformer_hidden_size)
-        question_body_feature = self.transformer(batch['question_body'])[0]
-        # (batch_size, transformer_hidden_size)
-        question_body_feature = self.pooler(question_body_feature)
-        # (batch_size, max_answer_length, transformer_hidden_size)
-        answer_feature = self.transformer(batch['answer'])[0]
-        # (batch_size, transformer_hidden_size)
-        answer_feature = self.pooler(answer_feature)
-        # (batch_size, 3*transformer_hidden_size)
-        context_features = torch.cat([
-            question_title_feature, 
-            question_body_feature, 
-            answer_feature
-        ], -1)
-        # (batch_size, linear_hidden_size)
-        output = self.fc_hidden(context_features)
-        # (batch_size, output_size)
-        output = self.fc_out(output)
+        question_title_feature = self.sentence_encoder(batch['question_title'])
+        question_body_feature = self.sentence_encoder(batch['question_body'])
+        answer_feature = self.sentence_encoder(batch['answer'])
+        context_features = [
+            question_title_feature, question_body_feature, answer_feature
+        ]
+        fusioned_feature = self.fusioner(context_features)
+        output = self.decoder(fusioned_feature)
         return output

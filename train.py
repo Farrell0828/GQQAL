@@ -122,20 +122,32 @@ def train(fold, config, args, device, logger):
     # Weight decay
     if 'no_decay' in config['solver'].keys():
         no_decay = config['solver']['no_decay']
-        grouped_parameters = [
-            {'params': [
-                p for n, p in model.named_parameters() 
-                if not any(nd in n for nd in no_decay)
-            ], 
-            'weight_decay': config['solver']['weight_decay']}, 
-            {'params': [
-                p for n, p in model.named_parameters() 
-                if any(nd in n for nd in no_decay)
-            ], 
-            'weight_decay': 0.0}
-        ]
     else:
-        grouped_parameters = model.parameters()
+        no_decay = []
+
+    bert_params = [
+        item for item in list(model.named_parameters()) 
+        if 'bert' in item[0]
+    ]
+    not_bert_params = [
+        item for item in list(model.named_parameters()) 
+        if 'bert' not in item[0]
+    ]
+
+    grouped_parameters = [
+        {
+            'params': [p for n, p in not_bert_params if not any(nd in n for nd in no_decay)], 
+            'weight_decay': config['solver']['weight_decay']
+        }, 
+        {
+            'params': [p for n, p in bert_params if not any(nd in n for nd in no_decay)],
+            'weight_decay': 0.01
+        },
+        {
+            'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 
+            'weight_decay': 0.0
+        }
+    ]
 
     # Optimizer
     if config['solver']['optimizer'] == 'AdamW':

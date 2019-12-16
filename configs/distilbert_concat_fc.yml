@@ -17,13 +17,21 @@ dataset:
   
 # Model related arguments
 model:
-  transformer_type: distilbert-base-uncased # same as tokenizer_type
-  transformer_hidden_size: 768    # 768 for distilbert and bert base
-                                  # 1024 for bert large
-  pool_method: max
-  linear_hidden_size: 512
-  activation: elu
-  output_size: 30
+  fusioner: concat
+  decoder: fc
+
+  sentence_encoder:
+    transformer_type: distilbert-base-uncased # same as tokenizer_type
+    transformer_hidden_size: 768    # 768 for distilbert and bert base
+                                    # 1024 for bert large
+    pool_method: max
+
+  fc_decoder:
+    input_size: 2304
+    hidden_size: 512
+    n_hidden_layers: 1
+    output_size: 30
+
   loss: bce       # 'mse' for mean square error loss
                   # 'bce' for binary cross entropy loss
 
@@ -31,11 +39,11 @@ model:
 # Training related arguments
 solver:
   batch_size: 8
-  n_epochs: 4
+  n_epochs: 5
   initial_lr: 0.00004
   optimizer: AdamW
   max_grad_norm: 1.0        # set to 0 if not clip gradient
-  weight_decay: 0.01        # set to 0 if not use l2 regularization
+  weight_decay: 0.00        # set to 0 if not use l2 regularization
 
   # Only work when weight_decay > 0
   no_decay:
