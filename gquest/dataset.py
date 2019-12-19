@@ -52,22 +52,14 @@ class QuestDataset(Dataset):
             ]
 
             self.answer_target_cols = [
-                'answer_helpful',
-                'answer_level_of_information', 'answer_plausible', 'answer_relevance',
+                'answer_helpful', 'answer_level_of_information', 
+                'answer_plausible', 'answer_relevance',
                 'answer_satisfaction', 'answer_type_instructions',
                 'answer_type_procedure', 'answer_type_reason_explanation',
                 'answer_well_written'
             ]
 
             self.target_cols = self.question_target_cols + self.answer_target_cols
-
-        if config['average_question_targets']:
-            question_mean = (self.df[['question_title'] + self.question_target_cols]
-                             .groupby('question_title').mean())
-            self.df[self.question_target_cols] = (
-                self.df[['question_title'] + self.question_target_cols]
-                .apply(lambda x: question_mean.loc[x['question_title']], axis=1)
-            )
 
         if config['split_to_sentences']:
             for col_name in ['question_body', 'answer']:
@@ -90,6 +82,15 @@ class QuestDataset(Dataset):
             )
         if overfit:
             self.qa_ids = self.qa_ids[:4]
+
+        if config['average_question_targets'] and split == 'train':
+            question_mean = self.df.loc[
+                self.qa_ids, ['question_title'] + self.question_target_cols
+            ].groupby('question_title').mean()
+            self.df.loc[self.qa_ids, self.question_target_cols] = (
+                self.df.loc[self.qa_ids, ['question_title'] + self.question_target_cols]
+                .apply(lambda x: question_mean.loc[x['question_title']], axis=1)
+            )
 
         self.pad_index = self.tokenizer.pad_token_id
         self.feature_cols = ['question_title', 'question_body', 'answer']
