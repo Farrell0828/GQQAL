@@ -9,18 +9,19 @@ dataset:
   #          bert-base-uncased, bert-base-cased, 
   #          bert-large-uncased, bert-large-cased ]
   tokenizer_type: distilbert-base-uncased
-  split_to_sentences: false
+  split_to_sentences: true
   average_question_targets: true
   max_sequence_length:
     question_title: 30
-    question_body: 512
-    answer: 512
+    sentence: 100
+  max_n_sentences: 30
   
   
 # Model related arguments
 model:
-  fusioner: concat
+  fusioner: tqaa
   decoder: fc
+  input_ndim: 3
 
   sentence_encoder:
     transformer_type: distilbert-base-uncased # same as tokenizer_type
@@ -28,8 +29,14 @@ model:
                                     # 1024 for bert large
     pool_method: max
 
+
+  tqaa_fusioner:
+    hidden_size: 768
+    attention_dropout: 0.1
+    
+
   fc_decoder:
-    input_size: 2304
+    input_size: 768
     hidden_size: 512
     n_hidden_layers: 1
     output_size: 30
@@ -40,7 +47,7 @@ model:
 
 # Training related arguments
 solver:
-  batch_size: 8
+  batch_size: 2
   n_epochs: 5
   initial_lr: 0.00004
   optimizer: AdamW

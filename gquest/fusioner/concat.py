@@ -7,4 +7,4 @@ class Concater(nn.Module):
         super().__init__()
 
     def forward(self, features):
-        return torch.cat(features, dim=-1)
+        return torch.cat(tuple(features.values()), dim=-1)
