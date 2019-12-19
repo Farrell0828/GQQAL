@@ -21,6 +21,7 @@ dataset:
 model:
   fusioner: concat
   decoder: fc
+  input_ndim: 2
 
   sentence_encoder:
     transformer_type: distilbert-base-uncased # same as tokenizer_type
