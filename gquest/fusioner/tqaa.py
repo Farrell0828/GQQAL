@@ -70,7 +70,7 @@ class AttentionLayer(nn.Module):
 
         '''
         mixed_query = self.query_linear(query)              # (B, H)
-        mixed_key = self.query_linear(key)                  # (B, S, H)
+        mixed_key = self.key_linear(key)                    # (B, S, H)
         mixed_value = self.value_linear(value)              # (B, S, H)
 
         mixed_query = mixed_query.unsqueeze(1)              # (B, 1, H)
