@@ -1,6 +1,7 @@
 name: gqqal
 channels:
   - pytorch
+  - conda-forge
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
@@ -11,7 +12,7 @@ dependencies:
   - blas=1.0=mkl
   - bleach=3.1.0=py37_0
   - c-ares=1.15.0=h7b6447c_1001
-  - ca-certificates=2019.11.27=0
+  - ca-certificates=2019.11.28=hecc5488_0
   - certifi=2019.11.28=py37_0
   - cffi=1.13.2=py37h2e261b9_0
   - cudatoolkit=10.1.243=h6bb024c_0
@@ -70,11 +71,13 @@ dependencies:
   - nbformat=4.4.0=py37_0
   - ncurses=6.1=he6710b0_1
   - ninja=1.9.0=py37hfd86e86_0
+  - nltk=3.4.5=py37_0
+  - nltk_data=2019.07.04=1
   - notebook=6.0.2=py37_0
   - numpy=1.17.4=py37hc1035e2_0
   - numpy-base=1.17.4=py37hde5b4d6_0
   - olefile=0.46=py37_0
-  - openssl=1.1.1d=h7b6447c_3
+  - openssl=1.1.1d=h516909a_0
   - pandas=0.25.3=py37he6710b0_0
   - pandoc=2.2.3.2=0
   - pandocfilters=1.4.2=py37_1
