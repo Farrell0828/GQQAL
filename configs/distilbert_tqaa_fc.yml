@@ -51,13 +51,15 @@ solver:
   n_epochs: 5
   initial_lr: 0.00004
   optimizer: AdamW
-  max_grad_norm: 1.0        # set to 0 if not clip gradient
-  weight_decay: 0.00        # set to 0 if not use l2 regularization
+  max_grad_norm: 1.0              # set to 0 if not clip gradient
+  transformer_weight_decay: 0.01  # set to 0 if not use l2 regularization
+  weight_decay: 0.00              # for non-transformer parameters
 
   # Only work when weight_decay > 0
   no_decay:
     - bias
     - LayerNorm.weight
+    - layer_norm.weight
 
   # Learning rate schedule
   lr_schedule: warmup_cosine

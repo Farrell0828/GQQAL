@@ -125,23 +125,23 @@ def train(fold, config, args, device, logger):
     else:
         no_decay = []
 
-    bert_params = [
+    transformer_params = [
         item for item in list(model.named_parameters()) 
-        if 'bert' in item[0]
+        if 'transformer' in item[0]
     ]
-    not_bert_params = [
+    not_transformer_params = [
         item for item in list(model.named_parameters()) 
-        if 'bert' not in item[0]
+        if 'transformer' not in item[0]
     ]
-
+    
     grouped_parameters = [
         {
-            'params': [p for n, p in not_bert_params if not any(nd in n for nd in no_decay)], 
+            'params': [p for n, p in not_transformer_params if not any(nd in n for nd in no_decay)], 
             'weight_decay': config['solver']['weight_decay']
         }, 
         {
-            'params': [p for n, p in bert_params if not any(nd in n for nd in no_decay)],
-            'weight_decay': 0.01
+            'params': [p for n, p in transformer_params if not any(nd in n for nd in no_decay)],
+            'weight_decay': config['solver']['transformer_weight_decay']
         },
         {
             'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 
