@@ -10,7 +10,7 @@ dataset:
   #          bert-large-uncased, bert-large-cased ]
   tokenizer_type: distilbert-base-uncased
   split_to_sentences: true
-  average_question_targets: true
+  average_question_targets: false
   max_sequence_length:
     question_title: 30
     sentence: 100
