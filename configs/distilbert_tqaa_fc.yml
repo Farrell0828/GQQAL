@@ -47,7 +47,8 @@ model:
 
 # Training related arguments
 solver:
-  batch_size: 2
+  batch_size: 8           # effective batch size
+  accumulation_steps: 4   # gradient accumulation steps
   n_epochs: 5
   initial_lr: 0.00004
   optimizer: AdamW

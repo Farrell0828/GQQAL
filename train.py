@@ -2,6 +2,7 @@ import argparse
 import logging 
 import yaml 
 import os 
+import math 
 import torch 
 import numpy as np 
 from tqdm import tqdm 
@@ -98,12 +99,19 @@ def train(fold, config, args, device, logger):
     val_dataset = QuestDataset(
         config['dataset'], 'val', fold=fold, overfit=args.overfit
     )
+
+    assert(config['solver']['batch_size'] % config['solver']['accumulation_steps'] == 0)
+    actual_batch_size = config['solver']['batch_size'] // config['solver']['accumulation_steps']
+    logger.info('Acture batch size: {}'.format(actual_batch_size))
+    logger.info('Gradient accumulation steps: {}'.format(config['solver']['accumulation_steps']))
+    logger.info('Effective batch size: {}'.format(config['solver']['batch_size']))
+
     train_dataloader = DataLoader(train_dataset, 
-                                  batch_size=config['solver']['batch_size'], 
+                                  batch_size=actual_batch_size, 
                                   shuffle=True,
                                   num_workers=args.cpu_workers)
     val_dataloader = DataLoader(val_dataset, 
-                                batch_size=config['solver']['batch_size'],
+                                batch_size=actual_batch_size,
                                 shuffle=False,
                                 num_workers=args.cpu_workers)
 
@@ -160,7 +168,7 @@ def train(fold, config, args, device, logger):
         raise NotImplementedError()
 
     # Learning rate schedule
-    iterations = len(train_dataloader)
+    iterations = int(math.ceil(len(train_dataloader) / config['solver']['accumulation_steps']))
     if config['solver']['lr_schedule'] == 'warmup_linear':
         warmup_steps = iterations * config["solver"]["warmup_epochs"]
         t_total = iterations * config["solver"]["n_epochs"]
@@ -198,28 +206,32 @@ def train(fold, config, args, device, logger):
     for epoch in range(config['solver']['n_epochs']):
         logger.info('\n')
         logger.info('Training for epoch {} begin...'.format(epoch))
-        for batch in tqdm(train_dataloader):
+        optimizer.zero_grad()
+        for i, batch in enumerate(tqdm(train_dataloader)):
             for key in batch:
                 batch[key] = batch[key].to(device)
 
-            optimizer.zero_grad()
             batch_output = model(batch)
             batch_loss = criterion(batch_output, batch['targets'])
             batch_loss.backward()
-            if config['solver']['max_grad_norm'] > 0:
-                clip_grad_norm_(model.parameters(), 
-                                config['solver']['max_grad_norm'])
-            optimizer.step()
-            scheduler.step()
 
-            summary_writer.add_scalar(
-                "train/loss", batch_loss, global_iteration_step
-            )
-            summary_writer.add_scalar(
-                "train/lr", optimizer.param_groups[0]["lr"], global_iteration_step
-            )
-            global_iteration_step += 1
-            torch.cuda.empty_cache()
+            if ((i+1) % config['solver']['accumulation_steps'] == 0 
+                or (i+1) == len(train_dataloader)):
+                if config['solver']['max_grad_norm'] > 0:
+                    clip_grad_norm_(model.parameters(), 
+                                    config['solver']['max_grad_norm'])
+                optimizer.step()
+                optimizer.zero_grad()
+                scheduler.step()
+
+                summary_writer.add_scalar(
+                    "train/loss", batch_loss, global_iteration_step
+                )
+                summary_writer.add_scalar(
+                    "train/lr", optimizer.param_groups[0]["lr"], global_iteration_step
+                )
+                global_iteration_step += 1
+                torch.cuda.empty_cache()
 
         # On epoch end, save checkpoint and evaluate
         logger.info('Training end. Save checkpoint to {}'.format(save_dirpath))
@@ -260,6 +272,7 @@ def train(fold, config, args, device, logger):
 
         model.train()
         torch.cuda.empty_cache()
+        summary_writer.flush()
 
     summary_writer.close()
     epochs_val_pred = np.array(epochs_val_pred)
